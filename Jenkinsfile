@@ -15,7 +15,7 @@ pipeline {
       }
     }
     stage('provision infra') {
-        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/lgrsdev/mha-terraform']]])
+        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/lgrsdev/mha-infra']]])
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "awsCredentials", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh 'terraform init'
             sh 'terraform apply -auto-approve'
