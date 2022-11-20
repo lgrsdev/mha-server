@@ -15,14 +15,16 @@ pipeline {
       }
     }
     stage('provision infra') {
+      steps {
         checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/lgrsdev/mha-infra']]])
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "awsCredentials", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
             sh 'terraform init'
             sh 'terraform apply -auto-approve'
         }
+      }
     }
     stage('push image') {
-        script {
+        steps {
             docker.withRegistry('https://998833414250.dkr.ecr.us-east-2.amazonaws.com/mha_server', 'ecr:us-east-2:awsCredentials') {
                 image.push()
             }
