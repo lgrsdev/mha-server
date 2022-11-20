@@ -25,9 +25,11 @@ pipeline {
     }
     stage('push image') {
         steps {
+          script {
             docker.withRegistry('https://998833414250.dkr.ecr.us-east-2.amazonaws.com/mha_server', 'ecr:us-east-2:awsCredentials') {
                 image.push()
             }
+          }
         }
     }
     stage('deploy') {
