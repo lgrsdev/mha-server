@@ -1,3 +1,4 @@
+String serverUrl = ''
 pipeline {
   agent any
   stages {
@@ -16,10 +17,12 @@ pipeline {
     }
     stage('provision infra') {
       steps {
-        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/lgrsdev/mha-infra']]])
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "awsCredentials", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-            sh 'terraform init'
-            sh 'terraform apply -auto-approve'
+        dir ('infra') {
+          checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/lgrsdev/mha-infra']]])
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "awsCredentials", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+              sh 'terraform init'
+              sh 'terraform apply -auto-approve'
+          }
         }
       }
     }
@@ -37,10 +40,10 @@ pipeline {
         withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "awsCredentials", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
           script {
             url = sh (script: 'aws eks describe-cluster --name mha --query cluster.endpoint --region us-east-2',returnStdout: true).trim()
-            String serverUrl = url.substring(1, url.length() - 1)
-            withKubeConfig([credentialsId: 'eksCredentials', serverUrl: serverUrl]) {
-              sh 'cat deployment.yaml | sed "s/{{BUILD_ID}}/${BUILD_ID}/g" | kubectl apply -f -'
-            }
+            serverUrl = url.substring(1, url.length() - 1)
+          }
+          withKubeConfig([credentialsId: 'eksCredentials', serverUrl: serverUrl]) {
+            sh 'cat deployment.yaml | sed "s/{{BUILD_ID}}/${BUILD_ID}/g" | kubectl apply -f -'
           }
         }
       }
